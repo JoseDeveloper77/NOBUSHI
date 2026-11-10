@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0e12">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Banda Player</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#0e0e12;--panel:#17171e;--panel2:#20202b;--text:#f3f3f6;--mut:#9a9aab;--acc:#ff7a3d;--acc2:#ffb067;--danger:#ff5d5d;--r:14px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+svg{width:24px;height:24px;fill:currentColor;display:block}
+.view{display:none;padding:0 16px}
+.view.active{display:block}
+h2{font-size:1.05rem;margin:22px 0 10px}
+.hint{color:var(--mut);font-size:.88rem;margin:6px 0 12px}
+
+/* Reproductor */
+.now{position:sticky;top:0;z-index:5;background:linear-gradient(var(--bg) 85%,transparent);padding:calc(14px + env(safe-area-inset-top)) 0 12px}
+.card{background:var(--panel);border-radius:20px;padding:16px}
+.meta{text-align:center;margin-bottom:12px}
+#nowTitle{font-size:1.2rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#nowSub{color:var(--mut);font-size:.85rem}
+#seek{width:100%;accent-color:var(--acc);margin:4px 0 0}
+.times{display:flex;justify-content:space-between;color:var(--mut);font-size:.78rem;font-variant-numeric:tabular-nums}
+.ctrl{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px}
+.ctrl button{width:48px;height:48px;border-radius:50%;display:grid;place-items:center}
+.ctrl button:active{background:var(--panel2)}
+.ctrl .sk{font-size:.8rem;font-weight:700;color:var(--mut)}
+.ctrl .play{width:64px;height:64px;background:var(--acc);color:#1a0d05}
+.ctrl .play:active{background:var(--acc2)}
+.ctrl .play svg{width:32px;height:32px}
+.listhead{display:flex;align-items:center;justify-content:space-between;margin:6px 0 8px}
+.listhead h2{margin:0}
+#repeat{position:relative;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--mut)}
+#repeat.on{color:var(--acc)}
+#repeat b{position:absolute;font-size:.6rem;top:12px;left:0;right:0;text-align:center}
+#list{list-style:none;margin:0;padding:0}
+#list li{display:flex;align-items:center;gap:4px;background:var(--panel);border-radius:var(--r);margin-bottom:8px;padding:4px}
+#list li.current{outline:2px solid var(--acc)}
+#list li.dragging{opacity:.85;box-shadow:0 8px 24px #000a;background:var(--panel2)}
+.handle{touch-action:none;width:40px;height:44px;display:grid;place-items:center;color:var(--mut);cursor:grab}
+.title{flex:1;min-width:0;text-align:left;display:flex;align-items:center;gap:10px;padding:6px 4px}
+.idx{color:var(--mut);font-size:.8rem;min-width:1.4em;text-align:right;font-variant-numeric:tabular-nums}
+li.current .idx{color:var(--acc)}
+.nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.off{width:36px;height:44px;display:grid;place-items:center;color:var(--mut)}
+.off.saved{color:var(--acc)}
+.mv{display:flex;flex-direction:column}
+.mv button{width:34px;height:22px;color:var(--mut);display:grid;place-items:center}
+.mv svg{width:16px;height:16px}
+.del{width:40px;height:44px;display:grid;place-items:center;color:var(--danger)}
+#empty{text-align:center;color:var(--mut);padding:28px 8px}
+
+/* Subir */
+label.field{display:block;margin-bottom:12px;color:var(--mut);font-size:.85rem}
+input[type=text]{width:100%;margin-top:6px;padding:13px 14px;border-radius:var(--r);border:1px solid #2c2c3a;background:var(--panel);color:var(--text);font:inherit}
+input[type=text]:focus{outline:2px solid var(--acc);border-color:transparent}
+.btn,.primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:var(--r);background:var(--panel2);font-weight:600;text-align:center;margin-bottom:10px}
+.primary{background:var(--acc);color:#1a0d05}
+.primary:disabled{opacity:.5}
+#fileInfo{color:var(--mut);font-size:.82rem;margin:-4px 0 12px}
+#upMsg{min-height:1.4em;font-size:.9rem;color:var(--acc2)}
+.stats{color:var(--mut);font-size:.85rem}
+
+/* Navegación */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;background:#121218f2;border-top:1px solid #23232f;padding-bottom:env(safe-area-inset-bottom);backdrop-filter:blur(8px)}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 0 8px;color:var(--mut);font-size:.75rem}
+nav button.active{color:var(--acc)}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:20;background:#2a2a38;padding:12px 14px;border-radius:var(--r);opacity:0;pointer-events:none;transition:opacity .2s;text-align:center}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<main>
+  <!-- PANTALLA PRINCIPAL: REPRODUCTOR -->
+  <section id="view-player" class="view active">
+    <div class="now">
+      <div class="card">
+        <div class="meta">
+          <div id="nowTitle">Elige un tema</div>
+          <div id="nowSub">Sin temas todavía</div>
+        </div>
+        <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Posición del tema">
+        <div class="times"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>
+        <div class="ctrl">
+          <button id="back10" class="sk" aria-label="Retroceder 10 segundos">−10</button>
+          <button id="prev" aria-label="Tema anterior"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM9.5 12L18 18V6z"/></svg></button>
+          <button id="play" class="play" aria-label="Reproducir / pausar"></button>
+          <button id="next" aria-label="Tema siguiente"><svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg></button>
+          <button id="fwd10" class="sk" aria-label="Adelantar 10 segundos">+10</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="listhead">
+      <h2>Lista de temas</h2>
+      <button id="repeat" aria-label="Repetir"><svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z"/></svg><b></b></button>
+    </div>
+    <ul id="list"></ul>
+    <div id="empty" hidden>Aún no hay temas.<br>Ve a la pestaña <b>Subir</b> para añadirlos.</div>
+  </section>
+
+  <!-- SEGUNDA PANTALLA: SUBIR TEMAS -->
+  <section id="view-upload" class="view">
+    <h2>Subir temas</h2>
+    <form id="upForm">
+      <label class="field">Nombre del tema
+        <input id="upName" type="text" maxlength="80" placeholder="Ej. Intro en directo" autocomplete="off">
+      </label>
+      <label class="btn" for="upFile">Elegir audio(s) o un ZIP</label>
+      <input id="upFile" type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.flac,.aac,.zip,application/zip,application/x-zip-compressed" multiple hidden>
+      <div id="fileInfo">Ningún archivo elegido</div>
+      <button id="upBtn" class="primary" type="submit">Guardar en la app</button>
+      <p class="hint">Un ZIP se descomprime solo y añade todos los audios que tenga dentro. Lo que subas aquí se queda solo en este móvil; para que lo oiga toda la banda, súbelo a la carpeta <b>temas</b> del repositorio.</p>
+    </form>
+    <div id="upMsg" role="status"></div>
+    <div class="stats" id="stats"></div>
+
+    <h2>Temas de la banda</h2>
+    <p class="hint">Los temas de la carpeta <b>temas</b> del repositorio aparecen solos y se reproducen por internet. Pulsa la nube ☁ de un tema (o el botón de abajo) para oírlo también sin conexión.</p>
+    <button id="btnSync" class="btn" type="button">Buscar temas nuevos</button>
+    <button id="btnAllOffline" class="btn" type="button">Guardar todos sin conexión</button>
+  </section>
+</main>
+
+<nav>
+  <button id="tabPlayer" class="active"><svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3z"/></svg>Reproductor</button>
+  <button id="tabUpload"><svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5zm7-16l-5.5 5.5 1.4 1.4L11 7.8V16h2V7.8l3.1 3.1 1.4-1.4z"/></svg>Subir</button>
+</nav>
+<div id="toast" role="status"></div>
+<audio id="audio" preload="metadata"></audio>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const audio = $('#audio');
+const ICON_PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
+const ICON_UP = '<svg viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg>';
+const ICON_DOWN = '<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>';
+const ICON_GRIP = '<svg viewBox="0 0 24 24"><path d="M4 8h16v2H4zm0 6h16v2H4z"/></svg>';
+const ICON_DEL = '<svg viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/></svg>';
+const ICON_CLOUD = '<svg viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4z"/></svg>';
+const ICON_CHECK = '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
+const MIME = {mp3:'audio/mpeg',m4a:'audio/mp4',wav:'audio/wav',ogg:'audio/ogg',opus:'audio/ogg',flac:'audio/flac',aac:'audio/aac'};
+const AUDIO_RE = /\.(mp3|m4a|wav|ogg|opus|flac|aac)$/i;
+const baseName = f => f.replace(/\.[^.]+$/, '');
+const remoteUrl = t => 'temas/' + encodeURIComponent(t.file);
+
+let tracks = [];
+let currentId = null;
+let currentUrl = null;
+let seeking = false;
+let repeat = lsGet('repeat') || 'all';
+
+function lsGet(k){ try { return localStorage.getItem(k); } catch { return null; } }
+function lsSet(k,v){ try { localStorage.setItem(k,v); } catch {} }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,9);
+const fmtTime = s => { if (!isFinite(s)) s = 0; s = Math.floor(s); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); };
+const fmtSize = b => b >= 1048576 ? (b/1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b/1024)) + ' KB';
+function toast(msg){ const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 3200); }
+
+/* ---------- Almacenamiento interno de la app (IndexedDB) ---------- */
+let db;
+function openDB(){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('band-player', 1);
+    r.onupgradeneeded = () => { r.result.createObjectStore('tracks', {keyPath:'id'}); r.result.createObjectStore('meta'); };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function read(storeName, fn){
+  return new Promise((res, rej) => {
+    const t = db.transaction(storeName, 'readonly');
+    const req = fn(t.objectStore(storeName));
+    t.oncomplete = () => res(req.result);
+    t.onerror = t.onabort = () => rej(t.error);
+  });
+}
+function commit({put = [], del = [], order}){
+  return new Promise((res, rej) => {
+    const t = db.transaction(['tracks','meta'], 'readwrite');
+    const ts = t.objectStore('tracks');
+    put.forEach(r => ts.put(r));
+    del.forEach(id => ts.delete(id));
+    if (order) t.objectStore('meta').put(order, 'order');
+    t.oncomplete = () => res();
+    t.onerror = t.onabort = () => rej(t.error || new Error('No se pudo guardar'));
+  });
+}
+async function loadTracks(){
+  const all = await read('tracks', s => s.getAll());
+  const order = (await read('meta', s => s.get('order'))) || [];
+  const pos = new Map(order.map((id, i) => [id, i]));
+  all.sort((a, b) => (pos.has(a.id) ? pos.get(a.id) : 1e12 + a.added) - (pos.has(b.id) ? pos.get(b.id) : 1e12 + b.added));
+  tracks = all;
+}
+async function addRecords(recs){
+  const next = tracks.concat(recs);
+  await commit({put: recs, order: next.map(t => t.id)});
+  tracks = next;
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
+}
+const saveOrder = () => commit({order: tracks.map(t => t.id)});
+
+// Tema guardado dentro de la app (subido por el usuario, o copia sin conexión)
+function makeRecord(name, blob, type){
+  return {id: uid(), name, blob, type: type || blob.type || 'audio/mpeg', size: blob.size, added: Date.now()};
+}
+// Tema de la banda que vive en el repositorio (carpeta temas/); blob se rellena al guardarlo sin conexión
+function makeRemote(file, name, size){
+  return {id: uid(), name: name || baseName(file), file, blob: null, type: MIME[file.split('.').pop().toLowerCase()] || 'audio/mpeg', size: size || 0, added: Date.now()};
+}
+function guessBlob(file){
+  if (file.type) return file;
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  return file.slice(0, file.size, MIME[ext] || 'audio/mpeg');
+}
+
+/* ---------- Reproducción ---------- */
+const idxOfCurrent = () => tracks.findIndex(t => t.id === currentId);
+
+async function playTrack(id, auto = true){
+  const t = tracks.find(x => x.id === id);
+  if (!t) return;
+  if (currentUrl) { URL.revokeObjectURL(currentUrl); currentUrl = null; }
+  if (t.blob) currentUrl = URL.createObjectURL(t.blob);   // copia guardada en el móvil
+  currentId = id;
+  audio.src = currentUrl || remoteUrl(t);                  // si no, streaming desde el repositorio
+  updateNow(); markCurrent(); setMedia(t);
+  if (auto) { try { await audio.play(); } catch (e) { /* el navegador pidió un gesto */ } }
+}
+function togglePlay(){
+  if (!currentId) { if (tracks.length) playTrack(tracks[0].id); return; }
+  if (audio.paused) audio.play().catch(() => {}); else audio.pause();
+}
+function next(){
+  if (!tracks.length) return;
+  const i = idxOfCurrent();
+  playTrack(tracks[(i + 1) % tracks.length].id);
+}
+function prev(){
+  if (!tracks.length) return;
+  if (currentId && audio.currentTime > 3) { audio.currentTime = 0; return; }
+  const i = idxOfCurrent();
+  playTrack(tracks[(i <= 0 ? tracks.length : i) - 1].id);
+}
+function skip(sec){
+  if (!currentId) return;
+  const d = audio.duration || 0;
+  audio.currentTime = Math.max(0, Math.min(d || 1e9, audio.currentTime + sec));
+}
+function stopPlayback(){
+  audio.pause(); audio.removeAttribute('src'); audio.load();
+  if (currentUrl) { URL.revokeObjectURL(currentUrl); currentUrl = null; }
+  currentId = null;
+  updateNow(); updatePlayIcon(); updateTimes();
+}
+
+audio.addEventListener('play', updatePlayIcon);
+audio.addEventListener('pause', updatePlayIcon);
+audio.addEventListener('timeupdate', updateTimes);
+audio.addEventListener('durationchange', updateTimes);
+audio.addEventListener('error', () => {
+  if (!currentId) return;
+  const t = tracks.find(x => x.id === currentId);
+  toast(t && t.file && !t.blob ? 'Sin conexión: guarda el tema para oírlo sin internet' : 'No se puede reproducir este archivo');
+});
+audio.addEventListener('ended', () => {
+  if (repeat === 'one') { audio.currentTime = 0; audio.play().catch(() => {}); return; }
+  const i = idxOfCurrent();
+  if (i < tracks.length - 1) playTrack(tracks[i + 1].id);
+  else if (repeat === 'all' && tracks.length) playTrack(tracks[0].id);
+  else updatePlayIcon();
+});
+
+function updatePlayIcon(){ $('#play').innerHTML = (currentId && !audio.paused) ? ICON_PAUSE : ICON_PLAY; }
+function updateTimes(){
+  const d = audio.duration, c = audio.currentTime || 0;
+  $('#tDur').textContent = fmtTime(isFinite(d) ? d : 0);
+  if (!seeking) {
+    $('#tCur').textContent = fmtTime(c);
+    $('#seek').value = isFinite(d) && d > 0 ? Math.round(c / d * 1000) : 0;
+  }
+}
+function updateNow(){
+  const i = idxOfCurrent();
+  $('#nowTitle').textContent = i >= 0 ? tracks[i].name : 'Elige un tema';
+  $('#nowSub').textContent = i >= 0 ? `Tema ${i + 1} de ${tracks.length}` : (tracks.length ? `${tracks.length} temas en la lista` : 'Sin temas todavía');
+}
+function markCurrent(){
+  document.querySelectorAll('#list li').forEach(li => li.classList.toggle('current', li.dataset.id === currentId));
+}
+function setMedia(t){
+  if (!('mediaSession' in navigator)) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({title: t.name, artist: 'Banda Player'});
+    const h = navigator.mediaSession.setActionHandler.bind(navigator.mediaSession);
+    h('play', () => audio.play()); h('pause', () => audio.pause());
+    h('previoustrack', prev); h('nexttrack', next);
+    h('seekbackward', () => skip(-10)); h('seekforward', () => skip(10));
+  } catch {}
+}
+
+/* Barra de posición */
+const seek = $('#seek');
+seek.addEventListener('input', () => { seeking = true; $('#tCur').textContent = fmtTime((audio.duration || 0) * seek.value / 1000); });
+seek.addEventListener('change', () => {
+  if (isFinite(audio.duration)) audio.currentTime = audio.duration * seek.value / 1000;
+  seeking = false;
+});
+
+/* ---------- Lista: render, reordenar, eliminar ---------- */
+function renderList(){
+  const ul = $('#list');
+  ul.innerHTML = '';
+  $('#empty').hidden = tracks.length > 0;
+  tracks.forEach((t, i) => {
+    const li = document.createElement('li');
+    li.dataset.id = t.id;
+    if (t.id === currentId) li.classList.add('current');
+    const off = t.file
+      ? `<button class="off${t.blob ? ' saved' : ''}" data-act="offline" aria-label="${t.blob ? 'Guardado sin conexión (pulsa para quitar la copia)' : 'Guardar para oír sin conexión'}">${t.blob ? ICON_CHECK : ICON_CLOUD}</button>`
+      : '';
+    li.innerHTML =
+      `<button class="handle" aria-label="Arrastrar para reordenar">${ICON_GRIP}</button>` +
+      `<button class="title"><span class="idx"></span><span class="nm"></span></button>` + off +
+      `<span class="mv"><button data-act="up" aria-label="Subir">${ICON_UP}</button><button data-act="down" aria-label="Bajar">${ICON_DOWN}</button></span>` +
+      `<button class="del" data-act="del" aria-label="Eliminar">${ICON_DEL}</button>`;
+    li.querySelector('.idx').textContent = i + 1;
+    li.querySelector('.nm').textContent = t.name;
+    ul.appendChild(li);
+  });
+  updateNow(); updateStats();
+}
+function updateStats(){
+  if (!tracks.length) { $('#stats').textContent = 'Todavía no hay temas.'; return; }
+  const saved = tracks.filter(t => t.blob);
+  const total = saved.reduce((a, t) => a + t.blob.size, 0);
+  $('#stats').textContent = `${tracks.length} temas · ${saved.length} disponibles sin conexión` + (saved.length ? ` (${fmtSize(total)} en este móvil)` : '');
+}
+
+$('#list').addEventListener('click', e => {
+  const li = e.target.closest('li'); if (!li) return;
+  const id = li.dataset.id;
+  const act = e.target.closest('[data-act]');
+  if (act) {
+    if (act.dataset.act === 'up') move(id, -1);
+    else if (act.dataset.act === 'down') move(id, 1);
+    else if (act.dataset.act === 'del') removeTrack(id);
+    else if (act.dataset.act === 'offline') toggleOffline(id);
+  } else if (e.target.closest('.title')) {
+    if (id === currentId) togglePlay(); else playTrack(id);
+  }
+});
+
+async function move(id, d){
+  const i = tracks.findIndex(t => t.id === id), j = i + d;
+  if (i < 0 || j < 0 || j >= tracks.length) return;
+  [tracks[i], tracks[j]] = [tracks[j], tracks[i]];
+  renderList();
+  try { await saveOrder(); } catch { toast('No se pudo guardar el orden'); }
+}
+async function removeTrack(id){
+  const t = tracks.find(x => x.id === id); if (!t) return;
+  if (!confirm(`¿Eliminar "${t.name}"?`)) return;
+  const rest = tracks.filter(x => x.id !== id);
+  try { await commit({del: [id], order: rest.map(x => x.id)}); }
+  catch { toast('No se pudo eliminar'); return; }
+  tracks = rest;
+  if (t.file) { const ig = ignoredFiles(); ig.add(t.file); lsSet('bundled', JSON.stringify([...ig])); }   // que no vuelva a aparecer solo
+  if (id === currentId) stopPlayback();
+  renderList();
+}
+
+/* Copia sin conexión de los temas del repositorio */
+async function saveOffline(t){
+  const r = await fetch(remoteUrl(t));
+  if (!r.ok) throw new Error('http');
+  let blob = await r.blob();
+  if (!blob.type || blob.type.indexOf('audio') !== 0) blob = blob.slice(0, blob.size, t.type || 'audio/mpeg');
+  await commit({put: [{...t, blob, size: blob.size}]});
+  t.blob = blob; t.size = blob.size;
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
+}
+async function toggleOffline(id){
+  const t = tracks.find(x => x.id === id); if (!t || !t.file) return;
+  if (t.blob) {
+    try { await commit({put: [{...t, blob: null}]}); } catch { toast('No se pudo quitar la copia'); return; }
+    t.blob = null; renderList(); toast('Copia sin conexión eliminada');
+    return;
+  }
+  toast(`Guardando «${t.name}»…`);
+  try { await saveOffline(t); renderList(); toast(`«${t.name}» disponible sin conexión`); }
+  catch (e) { toast((e && e.name === 'QuotaExceededError') ? 'No hay espacio suficiente en el móvil' : 'No se pudo descargar (¿sin conexión?)'); }
+}
+async function saveAllOffline(){
+  const todo = tracks.filter(t => t.file && !t.blob);
+  if (!todo.length) { toast(tracks.some(t => t.file) ? 'Todos los temas ya están guardados' : 'No hay temas del repositorio'); return; }
+  let ok = 0;
+  for (let i = 0; i < todo.length; i++) {
+    toast(`Guardando ${i + 1} de ${todo.length}…`);
+    try { await saveOffline(todo[i]); ok++; } catch {}
+  }
+  renderList();
+  toast(ok === todo.length ? `${ok} temas disponibles sin conexión` : `Guardados ${ok} de ${todo.length}. Revisa la conexión y el espacio.`);
+}
+
+/* Arrastrar y soltar con el dedo (asa ≡) */
+let drag = null;
+const list = $('#list');
+list.addEventListener('pointerdown', e => {
+  const h = e.target.closest('.handle'); if (!h) return;
+  const li = h.closest('li');
+  drag = {li};
+  li.classList.add('dragging');
+  h.setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+list.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const over = el && el.closest('#list li');
+  if (over && over !== drag.li) {
+    const r = over.getBoundingClientRect();
+    list.insertBefore(drag.li, e.clientY > r.top + r.height / 2 ? over.nextSibling : over);
+  }
+  if (e.clientY < 150) window.scrollBy(0, -14);
+  else if (e.clientY > innerHeight - 130) window.scrollBy(0, 14);
+});
+async function endDrag(){
+  if (!drag) return;
+  drag.li.classList.remove('dragging');
+  drag = null;
+  const ids = [...list.children].map(li => li.dataset.id);
+  const byId = new Map(tracks.map(t => [t.id, t]));
+  const changed = ids.some((id, i) => tracks[i].id !== id);
+  tracks = ids.map(id => byId.get(id));
+  renderList();
+  if (changed) { try { await saveOrder(); } catch { toast('No se pudo guardar el orden'); } }
+}
+list.addEventListener('pointerup', endDrag);
+list.addEventListener('pointercancel', endDrag);
+
+/* Repetir */
+function updateRepeat(){
+  const b = $('#repeat');
+  b.classList.toggle('on', repeat !== 'off');
+  b.querySelector('b').textContent = repeat === 'one' ? '1' : '';
+  b.setAttribute('aria-label', 'Repetir: ' + ({off:'no', all:'toda la lista', one:'un tema'})[repeat]);
+}
+$('#repeat').addEventListener('click', () => {
+  repeat = ({off:'all', all:'one', one:'off'})[repeat];
+  lsSet('repeat', repeat); updateRepeat();
+  toast({off:'Repetir: desactivado', all:'Repetir: toda la lista', one:'Repetir: un tema'}[repeat]);
+});
+
+/* ---------- Subir temas (audio suelto o ZIP) ---------- */
+const upFile = $('#upFile');
+const isZip = f => /\.zip$/i.test(f.name) || /zip/i.test(f.type);
+upFile.addEventListener('change', () => {
+  const fs = [...upFile.files], n = fs.length, zip = fs.some(isZip);
+  $('#fileInfo').textContent = n === 0 ? 'Ningún archivo elegido' : n === 1 ? fs[0].name : `${n} archivos elegidos`;
+  if (n === 1 && !zip && !$('#upName').value.trim()) $('#upName').value = baseName(fs[0].name);
+  $('#upName').disabled = n > 1 || zip;
+});
+
+// Lee un ZIP en el propio navegador y devuelve solo los audios que contiene.
+async function unzipAudio(file){
+  const tailLen = Math.min(file.size, 65557);
+  const tail = new DataView(await file.slice(file.size - tailLen).arrayBuffer());
+  let eocd = -1;
+  for (let i = tailLen - 22; i >= 0; i--) if (tail.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error('zip');
+  const total = tail.getUint16(eocd + 10, true);
+  const cdSize = tail.getUint32(eocd + 12, true);
+  const cdOff = tail.getUint32(eocd + 16, true);
+  if (cdOff === 0xFFFFFFFF || total === 0xFFFF) throw new Error('zip64');
+  const cd = new DataView(await file.slice(cdOff, cdOff + cdSize).arrayBuffer());
+  const out = [];
+  let p = 0;
+  for (let n = 0; n < total && p + 46 <= cd.byteLength; n++) {
+    if (cd.getUint32(p, true) !== 0x02014b50) break;
+    const flags = cd.getUint16(p + 8, true), method = cd.getUint16(p + 10, true);
+    const csize = cd.getUint32(p + 20, true);
+    const nlen = cd.getUint16(p + 28, true), xlen = cd.getUint16(p + 30, true), clen = cd.getUint16(p + 32, true);
+    const lho = cd.getUint32(p + 42, true);
+    const nameBytes = new Uint8Array(cd.buffer, p + 46, nlen);
+    p += 46 + nlen + xlen + clen;
+    let name;
+    try { name = new TextDecoder('utf-8', {fatal: true}).decode(nameBytes); }
+    catch { name = new TextDecoder('windows-1252').decode(nameBytes); }
+    if (name.endsWith('/') || name.startsWith('__MACOSX/') || /(^|\/)\._/.test(name) || !AUDIO_RE.test(name) || (flags & 1)) continue;
+    const lh = new DataView(await file.slice(lho, lho + 30).arrayBuffer());
+    if (lh.getUint32(0, true) !== 0x04034b50) continue;
+    const start = lho + 30 + lh.getUint16(26, true) + lh.getUint16(28, true);
+    const comp = file.slice(start, start + csize);
+    let blob;
+    if (method === 0) blob = comp;
+    else if (method === 8) {
+      if (typeof DecompressionStream === 'undefined') throw new Error('nodecomp');
+      blob = await new Response(comp.stream().pipeThrough(new DecompressionStream('deflate-raw'))).blob();
+    } else continue;
+    const base = name.split('/').pop();
+    const ext = base.split('.').pop().toLowerCase();
+    out.push({name: baseName(base), blob: blob.slice(0, blob.size, MIME[ext] || 'audio/mpeg')});
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
+}
+
+$('#upForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const files = [...upFile.files];
+  const msg = $('#upMsg');
+  if (!files.length) { msg.textContent = 'Elige primero un archivo de audio o un ZIP.'; return; }
+  const btn = $('#upBtn'); btn.disabled = true; msg.textContent = 'Guardando…';
+  const custom = $('#upName').value.trim();
+  try {
+    const recs = [];
+    let emptyZips = 0;
+    for (const f of files) {
+      if (isZip(f)) {
+        msg.textContent = `Descomprimiendo ${f.name}…`;
+        const found = await unzipAudio(f);
+        if (!found.length) emptyZips++;
+        found.forEach(o => recs.push(makeRecord(o.name, o.blob)));
+      } else {
+        recs.push(makeRecord(files.length === 1 && custom ? custom : baseName(f.name), guessBlob(f)));
+      }
+    }
+    if (!recs.length) { msg.textContent = 'No he encontrado audios dentro del ZIP.'; return; }
+    msg.textContent = 'Guardando…';
+    await addRecords(recs);
+    renderList();
+    msg.textContent = recs.length === 1 ? `«${recs[0].name}» guardado en la app.` : `${recs.length} temas guardados en la app.` + (emptyZips ? ' (Un ZIP no tenía audios.)' : '');
+    $('#upForm').reset(); $('#upName').disabled = false; $('#fileInfo').textContent = 'Ningún archivo elegido';
+  } catch (err) {
+    msg.textContent =
+      (err && err.name === 'QuotaExceededError') ? 'No hay espacio suficiente en el móvil.' :
+      (err && err.message === 'nodecomp') ? 'Este navegador no puede descomprimir ZIP. Actualízalo o sube los audios sueltos.' :
+      (err && /^zip/.test(err.message || '')) ? 'No he podido leer ese ZIP (¿está dañado o es demasiado grande?).' :
+      'No se pudo guardar el tema.';
+  } finally { btn.disabled = false; }
+});
+
+/* ---------- Temas de la banda (carpeta temas/ del repositorio) ---------- */
+function ignoredFiles(){ try { return new Set(JSON.parse(lsGet('bundled') || '[]')); } catch { return new Set(); } }
+
+// En GitHub Pages (usuario.github.io/repo/...) lista la carpeta temas/ del repositorio con la API de GitHub.
+async function listFromGitHub(){
+  const h = location.hostname;
+  if (!h.endsWith('.github.io')) return [];
+  const owner = h.split('.')[0];
+  const parts = location.pathname.split('/').filter(Boolean);
+  if (parts.length && parts[parts.length - 1].includes('.')) parts.pop();
+  const cands = [];
+  if (parts.length) cands.push([parts[0], parts.slice(1)]);   // sitio de proyecto: usuario.github.io/repo/
+  cands.push([h, parts]);                                      // carpeta dentro del sitio personal
+  for (const [repo, sub] of cands) {
+    try {
+      const r = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${[...sub, 'temas'].join('/')}`);
+      if (!r.ok) continue;
+      const j = await r.json();
+      if (Array.isArray(j)) return j.filter(f => f.type === 'file' && AUDIO_RE.test(f.name)).map(f => ({name: f.name, size: f.size || 0}));
+    } catch {}
+  }
+  return [];
+}
+
+// Añade a la lista los temas nuevos del repositorio (se reproducen por internet; se pueden guardar sin conexión).
+async function loadBundled(){
+  const items = new Map();   // archivo -> {name, size}
+  try {
+    const r = await fetch('temas/lista.json', {cache: 'no-store'});
+    if (r.ok) {
+      const j = await r.json();
+      if (Array.isArray(j)) j.forEach(it => it && it.file && items.set(it.file, {name: it.name || '', size: 0}));
+    }
+  } catch {}
+  (await listFromGitHub()).forEach(f => items.set(f.name, {name: (items.get(f.name) || {}).name || '', size: f.size}));
+
+  const ignored = ignoredFiles();
+  const known = new Set(tracks.filter(t => t.file).map(t => t.file));
+  const recs = [...items].filter(([file]) => !ignored.has(file) && !known.has(file)).map(([file, v]) => makeRemote(file, v.name, v.size));
+  if (!recs.length) return 0;
+  try { await addRecords(recs); } catch { return 0; }
+  renderList();
+  return recs.length;
+}
+$('#btnSync').addEventListener('click', async () => {
+  const n = await loadBundled();
+  toast(n ? `${n} tema${n > 1 ? 's' : ''} nuevo${n > 1 ? 's' : ''} de la banda` : 'No hay temas nuevos');
+});
+$('#btnAllOffline').addEventListener('click', saveAllOffline);
+
+/* ---------- Pestañas ---------- */
+function showTab(name){
+  $('#view-player').classList.toggle('active', name === 'player');
+  $('#view-upload').classList.toggle('active', name === 'upload');
+  $('#tabPlayer').classList.toggle('active', name === 'player');
+  $('#tabUpload').classList.toggle('active', name === 'upload');
+  window.scrollTo(0, 0);
+}
+$('#tabPlayer').addEventListener('click', () => showTab('player'));
+$('#tabUpload').addEventListener('click', () => showTab('upload'));
+
+$('#play').addEventListener('click', togglePlay);
+$('#next').addEventListener('click', next);
+$('#prev').addEventListener('click', prev);
+$('#back10').addEventListener('click', () => skip(-10));
+$('#fwd10').addEventListener('click', () => skip(10));
+
+/* ---------- Arranque ---------- */
+(async () => {
+  updatePlayIcon(); updateRepeat();
+  try {
+    db = await openDB();
+    await loadTracks();
+    renderList();
+    await loadBundled();
+  } catch (e) {
+    toast('No se pudo abrir el almacenamiento de la app');
+  }
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+})();
+</script>
+</body>
+</html>
