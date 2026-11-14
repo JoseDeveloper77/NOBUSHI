@@ -3,77 +3,97 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0e0e12">
+<meta name="theme-color" content="#000000">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Banda Player</title>
+<title>NOBUSHI · Player</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
-:root{--bg:#0e0e12;--panel:#17171e;--panel2:#20202b;--text:#f3f3f6;--mut:#9a9aab;--acc:#ff7a3d;--acc2:#ffb067;--danger:#ff5d5d;--r:14px}
+:root{--bg:#000;--ink:#f3f3f0;--mut:#8e8e89;--panel:#0b0b0b;--panel2:#1a1a1a;--danger:#d92a20;--f:Impact,Haettenschweiler,"Arial Narrow Bold","Roboto Condensed",sans-serif-condensed,"Arial Narrow",sans-serif;font-stretch:condensed}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
-html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+/* Suciedad / desgaste sobre toda la app, como el logo */
+body::before{content:"";position:fixed;inset:0;z-index:50;pointer-events:none;opacity:.6;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 4 -2.35'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 svg{width:24px;height:24px;fill:currentColor;display:block}
 .view{display:none;padding:0 16px}
 .view.active{display:block}
-h2{font-size:1.05rem;margin:22px 0 10px}
-.hint{color:var(--mut);font-size:.88rem;margin:6px 0 12px}
+
+h2{font:700 1.35rem/1 var(--f);-webkit-text-stroke:.5px currentColor;text-transform:uppercase;letter-spacing:.06em;margin:26px 0 14px}
+h2::after{content:"";display:block;height:9px;margin-top:8px;
+  background:linear-gradient(135deg,var(--ink) 25%,transparent 25%) -9px 0/18px 18px,linear-gradient(225deg,var(--ink) 25%,transparent 25%) -9px 0/18px 18px}
+.hint{color:var(--mut);font-size:.88rem;margin:6px 0 14px}
+.hint b{color:var(--ink)}
+
+/* Cabecera con el logo */
+.brand{padding:calc(14px + env(safe-area-inset-top)) 0 0;text-align:center}
+.brand img{display:block;margin:0 auto;width:min(84%,400px);height:auto}
+#view-upload .brand img{width:min(56%,250px)}
 
 /* Reproductor */
-.now{position:sticky;top:0;z-index:5;background:linear-gradient(var(--bg) 85%,transparent);padding:calc(14px + env(safe-area-inset-top)) 0 12px}
-.card{background:var(--panel);border-radius:20px;padding:16px}
+.now{position:sticky;top:0;z-index:5;background:linear-gradient(var(--bg) 88%,transparent);padding:calc(8px + env(safe-area-inset-top)) 0 14px}
+.card{position:relative;padding:16px 16px 12px;background:var(--ink);--c:16px;
+  clip-path:polygon(0 var(--c),var(--c) 0,calc(100% - 30px) 0,100% 14px,100% calc(100% - var(--c)),calc(100% - var(--c)) 100%,26px 100%,0 calc(100% - 22px))}
+.card::before{content:"";position:absolute;inset:3px;background:var(--bg);
+  clip-path:polygon(0 calc(var(--c) - 2px),calc(var(--c) - 2px) 0,calc(100% - 30px) 0,100% 12px,100% calc(100% - var(--c) + 2px),calc(100% - var(--c) + 2px) 100%,24px 100%,0 calc(100% - 20px))}
+.card>*{position:relative}
 .meta{text-align:center;margin-bottom:12px}
-#nowTitle{font-size:1.2rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#nowSub{color:var(--mut);font-size:.85rem}
-#seek{width:100%;accent-color:var(--acc);margin:4px 0 0}
-.times{display:flex;justify-content:space-between;color:var(--mut);font-size:.78rem;font-variant-numeric:tabular-nums}
-.ctrl{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px}
+#nowTitle{font:700 1.5rem/1.05 var(--f);text-transform:uppercase;letter-spacing:.04em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+#nowSub{color:var(--mut);font-size:.8rem;text-transform:uppercase;letter-spacing:.14em;margin-top:2px}
+#seek{width:100%;accent-color:var(--ink);margin:4px 0 0;height:28px}
+.times{display:flex;justify-content:space-between;color:var(--mut);font-size:.78rem;font-variant-numeric:tabular-nums;letter-spacing:.08em}
+.ctrl{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
 .ctrl button{width:48px;height:48px;border-radius:50%;display:grid;place-items:center}
-.ctrl button:active{background:var(--panel2)}
-.ctrl .sk{font-size:.8rem;font-weight:700;color:var(--mut)}
-.ctrl .play{width:64px;height:64px;background:var(--acc);color:#1a0d05}
-.ctrl .play:active{background:var(--acc2)}
-.ctrl .play svg{width:32px;height:32px}
-.listhead{display:flex;align-items:center;justify-content:space-between;margin:6px 0 8px}
-.listhead h2{margin:0}
-#repeat{position:relative;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--mut)}
-#repeat.on{color:var(--acc)}
-#repeat b{position:absolute;font-size:.6rem;top:12px;left:0;right:0;text-align:center}
-#list{list-style:none;margin:0;padding:0}
-#list li{display:flex;align-items:center;gap:4px;background:var(--panel);border-radius:var(--r);margin-bottom:8px;padding:4px}
-#list li.current{outline:2px solid var(--acc)}
-#list li.dragging{opacity:.85;box-shadow:0 8px 24px #000a;background:var(--panel2)}
-.handle{touch-action:none;width:40px;height:44px;display:grid;place-items:center;color:var(--mut);cursor:grab}
+.ctrl button:active{background:var(--ink);color:#000}
+.ctrl .sk{font:700 .95rem var(--f);letter-spacing:.04em;color:var(--mut)}
+.ctrl .play{width:68px;height:68px;background:var(--ink);color:#000;box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--ink)}
+.ctrl .play:active{background:#fff;transform:scale(.96)}
+.ctrl .play svg{width:34px;height:34px}
+.listhead{display:flex;align-items:flex-end;justify-content:space-between;margin:6px 0 8px}
+.listhead h2{margin:0;flex:1}
+#repeat{position:relative;width:42px;height:42px;display:grid;place-items:center;color:var(--mut);border:2px solid var(--mut);margin-left:12px}
+#repeat.on{color:#000;background:var(--ink);border-color:var(--ink)}
+#repeat b{position:absolute;font:700 .75rem var(--f);top:13px;left:0;right:0;text-align:center}
+#list{list-style:none;margin:10px 0 0;padding:0}
+#list li{display:flex;align-items:center;gap:2px;background:var(--panel);border:2px solid #3a3a38;border-left:7px solid var(--ink);margin-bottom:9px;padding:3px 2px 3px 0}
+#list li.current{background:var(--ink);color:#000;border-color:var(--ink)}
+#list li.current .handle,#list li.current .off,#list li.current .mv button,#list li.current .idx{color:#000}
+#list li.current .del{color:var(--danger)}
+#list li.dragging{opacity:.9;transform:rotate(-1deg) scale(1.02);box-shadow:0 10px 26px #000;background:var(--panel2);color:var(--ink)}
+.handle{touch-action:none;width:38px;height:46px;display:grid;place-items:center;color:var(--mut);cursor:grab}
 .title{flex:1;min-width:0;text-align:left;display:flex;align-items:center;gap:10px;padding:6px 4px}
-.idx{color:var(--mut);font-size:.8rem;min-width:1.4em;text-align:right;font-variant-numeric:tabular-nums}
-li.current .idx{color:var(--acc)}
-.nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.off{width:36px;height:44px;display:grid;place-items:center;color:var(--mut)}
-.off.saved{color:var(--acc)}
+.idx{font:700 1.1rem var(--f);color:var(--mut);min-width:1.4em;text-align:right}
+.nm{flex:1;min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.1;font:700 1.12rem/1.1 var(--f);text-transform:uppercase;letter-spacing:.03em}
+.off{width:36px;height:46px;display:grid;place-items:center;color:var(--mut)}
+.off.saved{color:var(--ink)}
 .mv{display:flex;flex-direction:column}
 .mv button{width:34px;height:22px;color:var(--mut);display:grid;place-items:center}
 .mv svg{width:16px;height:16px}
-.del{width:40px;height:44px;display:grid;place-items:center;color:var(--danger)}
-#empty{text-align:center;color:var(--mut);padding:28px 8px}
+.del{width:38px;height:46px;display:grid;place-items:center;color:var(--danger)}
+#empty{text-align:center;color:var(--mut);padding:28px 8px;text-transform:uppercase;letter-spacing:.08em}
 
 /* Subir */
-label.field{display:block;margin-bottom:12px;color:var(--mut);font-size:.85rem}
-input[type=text]{width:100%;margin-top:6px;padding:13px 14px;border-radius:var(--r);border:1px solid #2c2c3a;background:var(--panel);color:var(--text);font:inherit}
-input[type=text]:focus{outline:2px solid var(--acc);border-color:transparent}
-.btn,.primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:var(--r);background:var(--panel2);font-weight:600;text-align:center;margin-bottom:10px}
-.primary{background:var(--acc);color:#1a0d05}
+label.field{display:block;margin-bottom:12px;color:var(--mut);font-size:.8rem;text-transform:uppercase;letter-spacing:.12em}
+input[type=text]{width:100%;margin-top:6px;padding:13px 14px;border:2px solid var(--ink);background:#000;color:var(--ink);font:inherit;border-radius:0;text-transform:none;letter-spacing:0}
+input[type=text]:focus{outline:3px solid var(--ink);outline-offset:2px}
+.btn,.primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border:2px solid var(--ink);background:transparent;font:700 1.1rem var(--f);text-transform:uppercase;letter-spacing:.08em;text-align:center;margin-bottom:10px}
+.btn:active{background:var(--ink);color:#000}
+.primary{background:var(--ink);color:#000}
+.primary:active{background:#fff}
 .primary:disabled{opacity:.5}
 #fileInfo{color:var(--mut);font-size:.82rem;margin:-4px 0 12px}
-#upMsg{min-height:1.4em;font-size:.9rem;color:var(--acc2)}
+#upMsg{min-height:1.4em;font-size:.9rem;color:var(--ink)}
 .stats{color:var(--mut);font-size:.85rem}
 
 /* Navegación */
-nav{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;background:#121218f2;border-top:1px solid #23232f;padding-bottom:env(safe-area-inset-bottom);backdrop-filter:blur(8px)}
-nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 0 8px;color:var(--mut);font-size:.75rem}
-nav button.active{color:var(--acc)}
-#toast{position:fixed;left:16px;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:20;background:#2a2a38;padding:12px 14px;border-radius:var(--r);opacity:0;pointer-events:none;transition:opacity .2s;text-align:center}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;background:#000;border-top:3px solid var(--ink);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 0 8px;color:var(--mut);font:700 .95rem var(--f);text-transform:uppercase;letter-spacing:.1em}
+nav button.active{background:var(--ink);color:#000}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(92px + env(safe-area-inset-bottom));z-index:60;background:var(--ink);color:#000;padding:12px 14px;font:700 1rem var(--f);text-transform:uppercase;letter-spacing:.05em;opacity:0;pointer-events:none;transition:opacity .2s;text-align:center;box-shadow:0 0 0 3px #000,0 0 0 5px var(--ink)}
 #toast.show{opacity:1}
 </style>
 </head>
@@ -82,6 +102,7 @@ nav button.active{color:var(--acc)}
 <main>
   <!-- PANTALLA PRINCIPAL: REPRODUCTOR -->
   <section id="view-player" class="view active">
+    <header class="brand"><img src="logo.png" alt="NOBUSHI" width="900" height="496"></header>
     <div class="now">
       <div class="card">
         <div class="meta">
@@ -110,6 +131,7 @@ nav button.active{color:var(--acc)}
 
   <!-- SEGUNDA PANTALLA: SUBIR TEMAS -->
   <section id="view-upload" class="view">
+    <header class="brand"><img src="logo.png" alt="NOBUSHI" width="900" height="496"></header>
     <h2>Subir temas</h2>
     <form id="upForm">
       <label class="field">Nombre del tema
@@ -128,6 +150,10 @@ nav button.active{color:var(--acc)}
     <p class="hint">Los temas de la carpeta <b>temas</b> del repositorio aparecen solos y se reproducen por internet. Pulsa la nube ☁ de un tema (o el botón de abajo) para oírlo también sin conexión.</p>
     <button id="btnSync" class="btn" type="button">Buscar temas nuevos</button>
     <button id="btnAllOffline" class="btn" type="button">Guardar todos sin conexión</button>
+
+    <h2>Tu orden de reproducción</h2>
+    <p class="hint">Ordena los temas a tu gusto en la pestaña Reproductor (arrastrando ≡ o con ▲▼). Tu orden se guarda en la memoria de este navegador, sin cuenta ni sesión, y no afecta a nadie más. Si borras los datos del navegador o abres la web en otro móvil, empezará con el orden original.</p>
+    <button id="btnResetOrder" class="btn" type="button">Volver al orden original</button>
   </section>
 </main>
 
@@ -154,7 +180,10 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4
 const MIME = {mp3:'audio/mpeg',m4a:'audio/mp4',wav:'audio/wav',ogg:'audio/ogg',opus:'audio/ogg',flac:'audio/flac',aac:'audio/aac'};
 const AUDIO_RE = /\.(mp3|m4a|wav|ogg|opus|flac|aac)$/i;
 const baseName = f => f.replace(/\.[^.]+$/, '');
-const remoteUrl = t => 'temas/' + encodeURIComponent(t.file);
+// En pantalla se quita el "NOBUSHI - " repetido (ya está el logo); el nombre guardado no cambia
+const shown = n => (n.replace(/^\s*NOBUSHI\s*[-–—]\s*/i, '') || n);
+// El ?v= (tamaño del archivo) evita que el navegador sirva una versión antigua si se sustituye un tema con el mismo nombre
+const remoteUrl = t => 'temas/' + encodeURIComponent(t.file) + (t.v ? '?v=' + t.v : '');
 
 let tracks = [];
 let currentId = null;
@@ -218,8 +247,8 @@ function makeRecord(name, blob, type){
   return {id: uid(), name, blob, type: type || blob.type || 'audio/mpeg', size: blob.size, added: Date.now()};
 }
 // Tema de la banda que vive en el repositorio (carpeta temas/); blob se rellena al guardarlo sin conexión
-function makeRemote(file, name, size){
-  return {id: uid(), name: name || baseName(file), file, blob: null, type: MIME[file.split('.').pop().toLowerCase()] || 'audio/mpeg', size: size || 0, added: Date.now()};
+function makeRemote(file, name, v, src){
+  return {id: uid(), name: name || baseName(file), file, v: v || 0, src: src || 'lista', blob: null, type: MIME[file.split('.').pop().toLowerCase()] || 'audio/mpeg', size: v || 0, added: Date.now()};
 }
 function guessBlob(file){
   if (file.type) return file;
@@ -295,7 +324,7 @@ function updateTimes(){
 }
 function updateNow(){
   const i = idxOfCurrent();
-  $('#nowTitle').textContent = i >= 0 ? tracks[i].name : 'Elige un tema';
+  $('#nowTitle').textContent = i >= 0 ? shown(tracks[i].name) : 'Elige un tema';
   $('#nowSub').textContent = i >= 0 ? `Tema ${i + 1} de ${tracks.length}` : (tracks.length ? `${tracks.length} temas en la lista` : 'Sin temas todavía');
 }
 function markCurrent(){
@@ -338,7 +367,7 @@ function renderList(){
       `<span class="mv"><button data-act="up" aria-label="Subir">${ICON_UP}</button><button data-act="down" aria-label="Bajar">${ICON_DOWN}</button></span>` +
       `<button class="del" data-act="del" aria-label="Eliminar">${ICON_DEL}</button>`;
     li.querySelector('.idx').textContent = i + 1;
-    li.querySelector('.nm').textContent = t.name;
+    li.querySelector('.nm').textContent = shown(t.name);
     ul.appendChild(li);
   });
   updateNow(); updateStats();
@@ -557,9 +586,10 @@ $('#upForm').addEventListener('submit', async e => {
 function ignoredFiles(){ try { return new Set(JSON.parse(lsGet('bundled') || '[]')); } catch { return new Set(); } }
 
 // En GitHub Pages (usuario.github.io/repo/...) lista la carpeta temas/ del repositorio con la API de GitHub.
+// Devuelve null si no ha podido consultarla (sin conexión, límite de la API, no es GitHub Pages…).
 async function listFromGitHub(){
   const h = location.hostname;
-  if (!h.endsWith('.github.io')) return [];
+  if (!h.endsWith('.github.io')) return null;
   const owner = h.split('.')[0];
   const parts = location.pathname.split('/').filter(Boolean);
   if (parts.length && parts[parts.length - 1].includes('.')) parts.pop();
@@ -574,34 +604,99 @@ async function listFromGitHub(){
       if (Array.isArray(j)) return j.filter(f => f.type === 'file' && AUDIO_RE.test(f.name)).map(f => ({name: f.name, size: f.size || 0}));
     } catch {}
   }
-  return [];
+  return null;
 }
 
-// Añade a la lista los temas nuevos del repositorio (se reproducen por internet; se pueden guardar sin conexión).
-async function loadBundled(){
-  const items = new Map();   // archivo -> {name, size}
+// Lee temas/lista.json (orden por defecto y versión de cada tema). Devuelve null si no se pudo leer.
+async function fetchLista(){
   try {
     const r = await fetch('temas/lista.json', {cache: 'no-store'});
-    if (r.ok) {
-      const j = await r.json();
-      if (Array.isArray(j)) j.forEach(it => it && it.file && items.set(it.file, {name: it.name || '', size: 0}));
-    }
-  } catch {}
-  (await listFromGitHub()).forEach(f => items.set(f.name, {name: (items.get(f.name) || {}).name || '', size: f.size}));
+    if (!r.ok) return null;
+    const j = await r.json();
+    return Array.isArray(j) ? j.filter(it => it && it.file) : null;
+  } catch { return null; }
+}
+
+// Sincroniza la lista con el repositorio:
+//  · añade al final los temas nuevos (el orden que ya tenga cada uno NO se toca),
+//  · actualiza los temas que se hayan sustituido por otra versión,
+//  · retira los que ya no existen en el repositorio.
+// Devuelve {added, updated, removed}.
+async function loadBundled(){
+  const res = {added: 0, updated: 0, removed: 0};
+  const lista = await fetchLista();
+  const api = await listFromGitHub();
+  const items = new Map();   // archivo -> {name, v, src}
+  (lista || []).forEach(it => items.set(it.file, {name: it.name || '', v: it.v || 0, src: 'lista'}));
+  (api || []).forEach(f => { const o = items.get(f.name); items.set(f.name, {name: o ? o.name : '', v: f.size || (o ? o.v : 0), src: o ? o.src : 'api'}); });
+  if (lista === null && api === null) return res;   // sin información: no tocar nada
 
   const ignored = ignoredFiles();
-  const known = new Set(tracks.filter(t => t.file).map(t => t.file));
-  const recs = [...items].filter(([file]) => !ignored.has(file) && !known.has(file)).map(([file, v]) => makeRemote(file, v.name, v.size));
-  if (!recs.length) return 0;
-  try { await addRecords(recs); } catch { return 0; }
+  const put = [], del = [];
+  let tracksNow = tracks.slice();
+
+  // 1) retirar los que ya no están en el repositorio (solo si la fuente es fiable)
+  for (const t of tracks) {
+    if (!t.file || items.has(t.file)) continue;
+    const fiable = api !== null || (lista !== null && (t.src || 'lista') === 'lista');
+    if (!fiable) continue;
+    del.push(t.id); res.removed++;
+  }
+  tracksNow = tracksNow.filter(t => !del.includes(t.id));
+
+  // 2) actualizar los que cambiaron de versión
+  const reload = [];
+  for (const t of tracksNow) {
+    if (!t.file) continue;
+    const it = items.get(t.file); if (!it) continue;
+    const antes = t.v || t.size || 0;
+    if (it.v && antes && it.v !== antes) {
+      const teniaCopia = !!t.blob;
+      const nt = {...t, v: it.v, size: it.v, blob: null};
+      put.push(nt); Object.assign(t, nt); res.updated++;
+      if (teniaCopia) reload.push(t);   // tenía copia sin conexión: se vuelve a guardar con la versión nueva
+    } else if (it.v && !t.v) { t.v = it.v; put.push({...t}); }
+  }
+
+  // 3) añadir los nuevos al final
+  const known = new Set(tracksNow.filter(t => t.file).map(t => t.file));
+  const recs = [...items].filter(([file]) => !ignored.has(file) && !known.has(file)).map(([file, v]) => makeRemote(file, v.name, v.v, v.src));
+  res.added = recs.length;
+
+  if (!del.length && !put.length && !recs.length) return res;
+  const next = tracksNow.concat(recs);
+  try { await commit({put: put.concat(recs), del, order: next.map(t => t.id)}); } catch { return {added: 0, updated: 0, removed: 0}; }
+  tracks = next;
+  if (del.includes(currentId)) stopPlayback();
   renderList();
-  return recs.length;
+  for (const t of reload) { try { await saveOffline(t); } catch {} }
+  if (reload.length) renderList();
+  return res;
 }
-$('#btnSync').addEventListener('click', async () => {
-  const n = await loadBundled();
-  toast(n ? `${n} tema${n > 1 ? 's' : ''} nuevo${n > 1 ? 's' : ''} de la banda` : 'No hay temas nuevos');
-});
+
+// Orden original: el de lista.json; los temas subidos por cada uno (solo en su móvil) van detrás.
+async function resetOrder(){
+  const lista = await fetchLista();
+  const pos = new Map((lista || []).map((it, i) => [it.file, i]));
+  if (!pos.size) { toast('No he podido leer el orden original (¿sin conexión?)'); return; }
+  const rank = t => t.file ? (pos.has(t.file) ? pos.get(t.file) : 1e6) : 2e6;
+  const antes = tracks.map(t => t.id).join();
+  tracks = tracks.map((t, i) => [t, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(x => x[0]);
+  renderList();
+  if (tracks.map(t => t.id).join() === antes) { toast('La lista ya tiene el orden original'); return; }
+  try { await saveOrder(); toast('Orden original restablecido'); } catch { toast('No se pudo guardar el orden'); }
+}
+
+function resumenSync(r){
+  const p = [];
+  if (r.added) p.push(`${r.added} tema${r.added > 1 ? 's' : ''} nuevo${r.added > 1 ? 's' : ''}`);
+  if (r.updated) p.push(`${r.updated} actualizado${r.updated > 1 ? 's' : ''}`);
+  if (r.removed) p.push(`${r.removed} retirado${r.removed > 1 ? 's' : ''}`);
+  return p.length ? 'Lista al día: ' + p.join(', ') : 'No hay cambios en los temas de la banda';
+}
+$('#btnSync').addEventListener('click', async () => { toast(resumenSync(await loadBundled())); });
 $('#btnAllOffline').addEventListener('click', saveAllOffline);
+$('#btnResetOrder').addEventListener('click', () => { if (confirm('¿Volver al orden original de la banda? Tu orden actual se perderá.')) resetOrder(); });
 
 /* ---------- Pestañas ---------- */
 function showTab(name){
@@ -626,8 +721,11 @@ $('#fwd10').addEventListener('click', () => skip(10));
   try {
     db = await openDB();
     await loadTracks();
+    const teniaLista = tracks.length > 0;
     renderList();
-    await loadBundled();
+    try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}   // pide al navegador no borrar tu orden ni tus copias
+    const r = await loadBundled();
+    if (teniaLista && (r.added || r.updated || r.removed)) toast(resumenSync(r));
   } catch (e) {
     toast('No se pudo abrir el almacenamiento de la app');
   }

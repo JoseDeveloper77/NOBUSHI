@@ -1,15 +1,25 @@
 {
-  "name": "Banda Player",
-  "short_name": "Banda",
-  "description": "Reproductor de los temas de la banda",
+  "name": "NOBUSHI Player",
+  "short_name": "NOBUSHI",
+  "description": "Los temas de NOBUSHI",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0e0e12",
-  "theme_color": "#0e0e12",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }

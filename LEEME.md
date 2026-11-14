@@ -1,59 +1,40 @@
-# Banda Player — publicar y compartir
+# NOBUSHI Player
 
-Web que funciona como app: se abre con un enlace, reproduce los temas de la banda (play, anterior/siguiente, ±10 s, reordenar, eliminar) y deja guardarlos en el móvil para oírlos sin conexión.
+Web que funciona como app: se abre con un enlace, reproduce los temas de NOBUSHI (play, anterior/siguiente, ±10 s, reordenar, eliminar) y deja guardarlos en el móvil para oírlos sin conexión.
 
-Ya incluye 6 temas en la carpeta `temas/` (NOBUSHI: Nuestro rito, Peleando en la oscuridad, Subnormal, Deberían pedir perdón, Cuando pase la tormenta, Les da igual). El orden inicial de la lista es el de `temas/lista.json`.
+## Publicación
 
-## 1. Publicarla en GitHub (una sola vez)
+El repositorio se publica con GitHub Pages (*Settings → Pages → Deploy from a branch → main / (root)*). Enlace: `https://TU-USUARIO.github.io/NOMBRE-DEL-REPO/`
 
-### Opción A — con git (como el portafolio)
+## Añadir, cambiar o quitar temas
 
-```
-unzip banda-player.zip
-cd band-player
-git init
-git add .
-git commit -m "Banda Player"
-git branch -M main
-git remote add origin https://github.com/TU-USUARIO/NOMBRE-DEL-REPO.git
-git push -u origin main
-```
-(Antes crea en github.com un repositorio **público** vacío con ese nombre.)
+1. Pon los audios en la carpeta `temas/` (nombre del archivo = nombre del tema, mejor con el formato `NOBUSHI - NOMBRE.mp3`; en pantalla se quita el "NOBUSHI - " porque ya está el logo).
+2. Desde la carpeta del proyecto ejecuta `python3 actualizar-lista.py`. Mantiene el orden que ya había, añade los nuevos al final, quita los que ya no existen y apunta el tamaño de cada archivo.
+3. Sube los cambios (`git add . && git commit -m "Temas" && git push`).
 
-### Opción B — sin git, desde la web de GitHub (en ordenador)
+Qué pasa en el móvil de cada uno al abrir la web:
+- **Tema nuevo:** aparece al final de su lista (su orden no se toca).
+- **Tema sustituido** (mismo nombre, otro archivo): se actualiza solo; si tenía copia sin conexión, se vuelve a descargar la nueva. Para que lo detecte hace falta haber pasado el paso 2.
+- **Tema quitado de `temas/`:** desaparece de su lista.
+- Un tema que alguien elimina a mano en su móvil no vuelve a aparecer.
 
-Descomprime el ZIP, crea el repositorio público, pulsa *uploading an existing file* y arrastra **todo el contenido de la carpeta** (incluida la carpeta `temas`).
+El orden por defecto para quien entra por primera vez es el de `temas/lista.json`.
 
-### Opción C — dentro de tu portafolio
+## Orden personal de cada uno
 
-Copia la carpeta como `banda/` en el repositorio del portafolio y haz commit + push. Si el portafolio se construye con Vite, Next, React…, ponla dentro de `public/banda/` para que se publique tal cual.
+Cada persona reordena sus temas (arrastrando ≡ o con ▲▼) y el orden queda guardado en la memoria del propio navegador (IndexedDB): sin cuenta ni sesión, y sin afectar a los demás. En **Subir → Volver al orden original** se restablece el orden de la banda.
 
-### Activar GitHub Pages
+El orden se pierde si se borran los datos del navegador, se usa otro móvil/navegador o se navega en modo privado. En iPhone, Safari borra los datos de webs que no se usan en 7 días: conviene *Compartir → Añadir a pantalla de inicio*.
 
-*Settings → Pages → Build and deployment → Deploy from a branch → main / (root) → Save*. En 1–2 minutos estará en:
-
-- Repositorio propio: `https://TU-USUARIO.github.io/NOMBRE-DEL-REPO/`
-- Dentro del portafolio: `https://TU-USUARIO.github.io/NOMBRE-PORTAFOLIO/banda/` (o `https://TU-USUARIO.github.io/banda/` si el portafolio es tu sitio personal)
-
-Manda ese enlace por WhatsApp.
-
-## 2. Añadir más temas para toda la banda
-
-Sube los audios (mp3, m4a, wav…) a la carpeta `temas/` del repositorio (*Add file → Upload files*; hasta 25 MB por archivo desde la web). El nombre del archivo es el nombre del tema. Aparecen solos al abrir la app, o al momento con **Subir → Buscar temas nuevos**.
-
-## 3. Cómo lo oyen los demás
+## Cómo lo oyen los demás
 
 - Los temas de `temas/` se reproducen **por internet** (no ocupan espacio).
-- Pulsa la nube ☁ de un tema para guardarlo en el móvil y oírlo **sin conexión** (pasa a ✓; pulsa otra vez para quitar la copia). **Subir → Guardar todos sin conexión** los guarda todos (unos 50 MB ahora).
-- Cada uno ordena la lista a su gusto sin afectar a los demás.
+- La nube ☁ de un tema lo guarda en el móvil para oírlo **sin conexión** (pasa a ✓; otra pulsación quita la copia). **Subir → Guardar todos sin conexión** guarda todos (unos 55 MB ahora).
+- **Subir → Elegir audio(s) o un ZIP:** el ZIP se descomprime solo. Esos temas se quedan solo en ese móvil.
 
-## 4. Subir un ZIP
+## Detalles
 
-En **Subir → Elegir audio(s) o un ZIP** se descomprime solo y añade todos los audios que tenga. Esos temas quedan guardados **solo en ese móvil**; para que los oiga toda la banda hay que ponerlos en `temas/` del repositorio.
-
-## Detalles a tener en cuenta
-
-- GitHub Pages gratis exige repositorio público: cualquiera con el enlace puede oír y descargar los temas.
-- Si cambias o renombras un archivo de `temas/`, actualiza también `temas/lista.json`. Si sustituyes un archivo manteniendo el nombre, las copias sin conexión ya guardadas no se actualizan: usa un nombre nuevo.
-- La detección automática de temas nuevos usa la API pública de GitHub (límite de 60 consultas por hora por conexión); si falla, la app sigue mostrando los de `lista.json`.
+- Con el repositorio público, cualquiera con el enlace puede oír y descargar los temas.
+- Los temas nuevos subidos a `temas/` se detectan con la API pública de GitHub (límite de 60 consultas por hora por conexión); si falla, se usa `lista.json`.
 - Para ZIP el navegador debe ser reciente (Chrome/Edge 103+, Safari 16.4+, Firefox 113+).
+- La imagen (`logo.png`, iconos) sale del logo de NOBUSHI. La tipografía es la condensada del sistema (Impact si existe, Roboto Condensed en Android).
